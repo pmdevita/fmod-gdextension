@@ -153,6 +153,10 @@ namespace godot {
         Ref<FmodEventDescription> get_event_from_guid(const String& guid);
         Ref<FmodEventDescription> get_event_from_guid_internal(const FMOD_GUID& guid);
         Ref<FmodEventDescription> get_event(const String& eventPath);
+        FMOD_GUID get_event_guid_internal(const String& event_path);
+        String get_event_guid(const String& event_path);
+        String get_event_path_internal(const FMOD_GUID& guid);
+        String get_event_path(const String& guid);
         Array get_all_vca();
         Array get_all_buses();
         Array get_all_event_descriptions();
@@ -177,8 +181,8 @@ namespace godot {
         Array get_global_parameter_desc_list();
 
         // LISTENERS
-        void add_listener(int index, Object* gameObj);
-        void remove_listener(int index);
+        void add_listener(int index, Object* game_obj);
+        void remove_listener(int index, Object* game_obj);
         void set_system_listener_number(int listenerNumber);
         int get_system_listener_number() const;
         float get_system_listener_weight(int index);

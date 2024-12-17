@@ -15,19 +15,19 @@ FmodCache::~FmodCache() {
 
 void FmodCache::update_pending() {
     if (loading_banks.size() == 0) { return; }
-    List<Ref<FmodBank>> toDelete;
-    for (Ref<FmodBank> loadingBank : loading_banks) {
-        int loading_state = loadingBank->get_loading_state();
+    List<Ref<FmodBank>> to_delete;
+    for (const Ref<FmodBank>& loading_bank : loading_banks) {
+        int loading_state = loading_bank->get_loading_state();
         if (loading_state == FMOD_STUDIO_LOADING_STATE_LOADED) {
-            _get_bank_data(loadingBank);
-            banks[loadingBank->get_godot_res_path()] = loadingBank;
-            toDelete.push_back(loadingBank);
+            _get_bank_data(loading_bank);
+            banks[loading_bank->get_godot_res_path()] = loading_bank.ptr();
+            to_delete.push_back(loading_bank);
         } else if (loading_state == FMOD_STUDIO_LOADING_STATE_ERROR) {
-            toDelete.push_back(loadingBank);
+            to_delete.push_back(loading_bank);
             GODOT_LOG_ERROR("Fmod Sound System: Error loading bank.")
         }
     }
-    for (const Ref<FmodBank>& element : toDelete) {
+    for (const Ref<FmodBank>& element : to_delete) {
         loading_banks.erase(element);
     }
 }
@@ -58,7 +58,7 @@ void FmodCache::remove_bank(const String& bankPath) {
         GODOT_LOG_ERROR(vformat("Cannot unload bank with path %s, not in cache.", bankPath));
         return;
     }
-    Ref<FmodBank> bank = banks[bankPath];
+    FmodBank* bank = banks[bankPath];
     _remove_bank_data(bank);
     ERROR_CHECK(bank->get_wrapped()->unload());
     banks.erase(bankPath);
@@ -128,27 +128,107 @@ bool FmodCache::has_event_path(const String& eventPath) {
 }
 
 Ref<FmodVCA> FmodCache::get_vca(const FMOD_GUID& guid) {
-    return vcas.get(guid);
+    if (
+            HashMap<FMOD_GUID, Ref<FmodVCA>, FmodGuidHashMapHasher, FmodGuidHashMapComparer>::Iterator iterator{
+                    vcas.find(guid)
+            }
+    ) {
+        return iterator->value;
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find vca with guid: %s", fmod_guid_to_string(guid)));
+#endif
+
+    return {};
 }
 
-Ref<FmodVCA> FmodCache::get_vca(const String& vcaPath) {
-    return vcas.get(strings_to_guid.get(vcaPath));
+Ref<FmodVCA> FmodCache::get_vca(const String& vca_path) {
+    if (HashMap<String, FMOD_GUID>::Iterator iterator {strings_to_guid.find(vca_path)}) {
+        return get_vca(iterator->value);
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find vca with path: %s", vca_path));
+#endif
+
+    return {};
 }
 
 Ref<FmodBus> FmodCache::get_bus(const FMOD_GUID& guid) {
-    return buses.get(guid);
+    if (
+            HashMap<FMOD_GUID, Ref<FmodBus>, FmodGuidHashMapHasher, FmodGuidHashMapComparer>::Iterator iterator{
+                    buses.find(guid)
+            }
+    ) {
+        return iterator->value;
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find bus with guid: %s", fmod_guid_to_string(guid)));
+#endif
+
+    return {};
 }
 
-Ref<FmodBus> FmodCache::get_bus(const String& busPath) {
-    return buses.get(strings_to_guid.get(busPath));
+Ref<FmodBus> FmodCache::get_bus(const String& bus_path) {
+    if (HashMap<String, FMOD_GUID>::Iterator iterator {strings_to_guid.find(bus_path)}) {
+        return get_bus(iterator->value);
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find bus with path: %s", bus_path));
+#endif
+
+    return {};
 }
 
 Ref<FmodEventDescription> FmodCache::get_event(const FMOD_GUID& guid) {
-    return event_descriptions.get(guid);
+    if (
+      HashMap<FMOD_GUID, Ref<FmodEventDescription>, FmodGuidHashMapHasher, FmodGuidHashMapComparer>::Iterator iterator {
+          event_descriptions.find(guid)
+      }
+    ) {
+        return iterator->value;
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find event with guid: %s", fmod_guid_to_string(guid)));
+#endif
+
+    return {};
 }
 
 Ref<FmodEventDescription> FmodCache::get_event(const String& eventPath) {
-    return event_descriptions.get(strings_to_guid.get(eventPath));
+    if (HashMap<String, FMOD_GUID>::Iterator iterator {strings_to_guid.find(eventPath)}) {
+        return get_event(iterator->value);
+    }
+
+#ifdef DEBUG_ENABLED
+    GODOT_LOG_WARNING(vformat("Cannot find event with path: %s", eventPath));
+#endif
+
+    return {};
+}
+
+FMOD_GUID FmodCache::get_event_guid(const String& event_path) {
+    if (HashMap<String, FMOD_GUID>::Iterator iterator {strings_to_guid.find(event_path)}) {
+        return iterator->value;
+    }
+
+    return {};
+}
+
+String FmodCache::get_event_path(const FMOD_GUID& guid) {
+    if (
+            HashMap<FMOD_GUID, Ref<FmodEventDescription>, FmodGuidHashMapHasher, FmodGuidHashMapComparer>::Iterator iterator{
+                    event_descriptions.find(guid)
+            }
+            ) {
+        return iterator->value->get_path();
+    }
+
+    return {};
 }
 
 bool FmodCache::is_master_loaded() {
@@ -182,7 +262,7 @@ void FmodCache::_get_bank_data(Ref<FmodBank> bank) {
     }
 }
 
-void FmodCache::_remove_bank_data(Ref<FmodBank> bank) {
+void FmodCache::_remove_bank_data(FmodBank* bank) {
     for (Ref<FmodBus> bus : bank->getBuses()) {
         strings_to_guid.erase(bus->get_path());
         buses.erase(bus->get_guid());

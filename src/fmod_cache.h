@@ -34,7 +34,7 @@ namespace godot {
         List<Ref<FmodBank>> loading_banks;
 
         HashMap<String, Ref<FmodFile>> files;
-        HashMap<String, Ref<FmodBank>> banks;
+        HashMap<String, FmodBank*> banks;
 
         HashMap<FMOD_GUID, Ref<FmodEventDescription>, FmodGuidHashMapHasher, FmodGuidHashMapComparer> event_descriptions;
         HashMap<FMOD_GUID, Ref<FmodBus>, FmodGuidHashMapHasher, FmodGuidHashMapComparer> buses;
@@ -43,7 +43,7 @@ namespace godot {
         HashMap<String, FMOD_GUID> strings_to_guid;
 
         void _get_bank_data(Ref<FmodBank> bank);
-        void _remove_bank_data(Ref<FmodBank> bank);
+        void _remove_bank_data(FmodBank* bank);
 
     public:
         FmodCache() = delete;
@@ -77,11 +77,13 @@ namespace godot {
         bool has_event_path(const String& eventPath);
 
         Ref<FmodVCA> get_vca(const FMOD_GUID& guid);
-        Ref<FmodVCA> get_vca(const String& vcaPath);
+        Ref<FmodVCA> get_vca(const String& vca_path);
         Ref<FmodBus> get_bus(const FMOD_GUID& guid);
-        Ref<FmodBus> get_bus(const String& busPath);
+        Ref<FmodBus> get_bus(const String& bus_path);
         Ref<FmodEventDescription> get_event(const FMOD_GUID& guid);
         Ref<FmodEventDescription> get_event(const String& eventPath);
+        FMOD_GUID get_event_guid(const String& event_path);
+        String get_event_path(const FMOD_GUID& guid);
     };
 }// namespace godot
 
