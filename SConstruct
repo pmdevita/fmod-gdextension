@@ -121,12 +121,18 @@ elif env["platform"] == "android":
     env.Append(LIBS=[libfmod, libfmodstudio])
 
 elif env["platform"] == "web":
-    libfmodstudio = os.path.join(fmod_lib_dir, 'web/studio/lib/fastcomp/bitcode/', 'fmodstudio%s.bc' % lfix)
+    html_lib = os.path.join(fmod_lib_dir, 'api/studio/lib/upstream/w32/')
+    html_inc = os.path.join(fmod_lib_dir, 'api/studio/inc/')
 
-    env.Append(CPPPATH=[env['fmod_lib_dir'] + 'web/core/inc/', env['fmod_lib_dir'] + 'web/studio/inc/'])
-    env.Append(LIBPATH=[env['fmod_lib_dir'] + 'web/core/lib/fastcomp/bitcode/', env['fmod_lib_dir'] + 'web/studio/lib/fastcomp/bitcode/'])
+    html_core_lib = os.path.join(fmod_lib_dir, 'api/core/lib/upstream/w32/')
+    html_core_inc = os.path.join(fmod_lib_dir, 'api/core/inc/')
+
+    libfmodstudio = os.path.join(html_lib, 'fmodstudio%s_bindings.a' % lfix)
+
+    env.Append(CPPPATH=[html_inc, html_core_inc])
+    env.Append(LIBPATH=[html_lib])
     # Instead of LIBS, directly add to LINKFLAGS for explicit paths
-    env.Append(LINKFLAGS=[libfmodstudio])
+    env.Append(LINKFLAGS=[libfmodstudio, "-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"])
 
 #Output is placed in the addons directory of the demo project directly
 target = "{}{}/{}.{}.{}".format(
