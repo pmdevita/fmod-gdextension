@@ -128,12 +128,17 @@ elif env["platform"] == "web":
     html_core_lib = os.path.join(fmod_lib_dir, 'api/core/lib/upstream/w32/')
     html_core_inc = os.path.join(fmod_lib_dir, 'api/core/inc/')
 
-    libfmodstudio = os.path.join(html_lib, 'fmodstudio%s_bindings.a' % lfix)
+    libfmodstudio = 'fmodstudio%s_wasm.a'% lfix
+
+    # libfmodstudio_path = os.path.join(html_lib, 'fmodstudio%s_bindings.a' % lfix)
+    libfmodstudio_path = os.path.join(html_lib, 'fmodstudio%s_wasm.a' % lfix)
 
     env.Append(CPPPATH=[html_inc, html_core_inc])
     env.Append(LIBPATH=[html_lib])
-    # Instead of LIBS, directly add to LINKFLAGS for explicit paths
-    env.Append(LINKFLAGS=[libfmodstudio, "-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"])
+    env.Append(LIBS=[libfmodstudio])
+    # Instead of LIBS, directly add t o LINKFLAGS for explicit paths
+    env.Append(LINKFLAGS=[libfmodstudio_path])
+    env.Append(LINKFLAGS=["-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,setValue,getValue"])
 
 #Output is placed in the addons directory of the demo project directly
 target = "{}{}/{}.{}.{}".format(
